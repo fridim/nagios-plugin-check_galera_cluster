@@ -1,0 +1,122 @@
+#!/bin/bash
+PROGNAME=`basename $0`
+VERSION="Version 1.0,"
+AUTHOR="Guillaume Coré <g@fridim.org>"
+ 
+ST_OK=0
+ST_WR=1
+ST_CR=2
+ST_UK=3
+
+print_version() {
+    echo "$VERSION $AUTHOR"
+} 
+
+print_help() {
+    print_version $PROGNAME $VERSION
+    echo ""
+    echo "$PROGNAME is a Nagios plugin to monitor Galera cluster status."
+    echo ""
+    echo "$PROGNAME -u USER -p PASSWORD [-H HOST] [-P PORT] [-w SIZE] [-c SIZE] [-0]"
+    echo ""
+    echo "Options:"
+    echo "  u)"
+    echo "    MySQL user."
+    echo "  p)"
+    echo "    MySQL password."
+    echo "  H)"
+    echo "    MySQL host. Default is localhost."
+    echo "  P)"
+    echo "    MySQL port. Default is 3306."
+    echo "  w)"
+    echo "    Sets minimum number of nodes in the cluster when WARNING is raised. (default is same as critical)."
+    echo "  c)"
+    echo "    Sets minimum number of nodes in the cluster when CRITICAL is raised. (default is 2)."
+    echo "  0)"
+    echo "    Rise CRITICAL if the node is not primary"
+    exit $ST_UK
+}
+
+# default values
+crit=2
+port='3306'
+mysqlhost='localhost'
+
+while getopts “hvu:p:H:P:w:c:0” OPTION; do
+    case $OPTION in
+        h)
+            print_help
+            exit $ST_UK
+            ;;
+        v)
+            print_version $PROGNAME $VERSION
+            exit $ST_UK
+            ;;
+        u)
+            mysqluser=$OPTARG
+            ;;
+        p)
+            password=$OPTARG
+            ;;
+        H)
+            mysqlhost=$OPTARG
+            ;;
+        P)
+            port=$OPTARG
+            ;;
+        w)
+            warn=$OPTARG
+            ;;
+        c)
+            crit=$OPTARG
+            ;;
+        0)
+            primary='TRUE'
+            ;;
+        ?)
+            echo "Unknown argument: $1"
+            print_help
+            exit $ST_UK
+            ;;
+    esac
+done
+
+if [ -z "$warn" ]; then
+    warn=$crit
+fi
+
+# MANDATORY args
+if [ -z "$mysqluser" ]; then
+  echo "argument -u missing"
+  print_help
+  exit $ST_UK
+fi
+
+if [ -z "$password" ]; then
+  echo "argument -p missing"
+  print_help
+  exit $ST_UK
+fi
+
+r1=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_size'"|grep wsrep_cluster_size|cut -f 2)
+r2=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_status'"|grep wsrep_cluster_status|cut -f 2)
+
+if [ "$primary" = 'TRUE' ]; then
+  if [ "$r2" != 'Primary' ]; then
+    echo "CRITICAL: node is not primary"
+    ST_FINAL=$ST_CR
+  fi
+fi
+
+if [ $r1 -gt $warn ]; then
+  echo "OK: number of NODES = $r1"
+  ST_FINAL=${ST_FINAL-$ST_OK}
+elif [ $r1 -le $crit ]; then
+  echo "CRITICAL: number of NODES = $r1"
+  ST_FINAL=$ST_CR
+elif [ $r1 -le $warn ]; then
+  echo "WARNING: number of NODES = $r1"
+  ST_FINAL=${ST_FINAL-$ST_WR}
+fi
+
+exit $ST_FINAL
