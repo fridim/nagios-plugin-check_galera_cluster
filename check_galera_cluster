@@ -7,6 +7,7 @@ ST_OK=0
 ST_WR=1
 ST_CR=2
 ST_UK=3
+ST_FINAL=$ST_UK
 
 print_version() {
     echo "$VERSION $AUTHOR"
@@ -17,7 +18,7 @@ print_help() {
     echo ""
     echo "$PROGNAME is a Nagios plugin to monitor Galera cluster status."
     echo ""
-    echo "$PROGNAME -u USER -p PASSWORD [-H HOST] [-P PORT] [-w SIZE] [-c SIZE] [-0]"
+    echo "$PROGNAME -u USER -p PASSWORD [-H HOST] [-P PORT] [-w SIZE] [-c SIZE] [-f FLOAT] [-0]"
     echo ""
     echo "Options:"
     echo "  u)"
@@ -32,6 +33,8 @@ print_help() {
     echo "    Sets minimum number of nodes in the cluster when WARNING is raised. (default is same as critical)."
     echo "  c)"
     echo "    Sets minimum number of nodes in the cluster when CRITICAL is raised. (default is 2)."
+    echo "  f)"
+    echo "    Sets critical value of wsrep_flow_control_paused (default is 0.1)."
     echo "  0)"
     echo "    Rise CRITICAL if the node is not primary"
     exit $ST_UK
@@ -41,8 +44,9 @@ print_help() {
 crit=2
 port='3306'
 mysqlhost='localhost'
+fcp=0.1
 
-while getopts “hvu:p:H:P:w:c:0” OPTION; do
+while getopts “hvu:p:H:P:w:c:f:0” OPTION; do
     case $OPTION in
         h)
             print_help
@@ -69,6 +73,9 @@ while getopts “hvu:p:H:P:w:c:0” OPTION; do
             ;;
         c)
             crit=$OPTARG
+            ;;
+        f)
+            fcp=$OPTARG
             ;;
         0)
             primary='TRUE'
@@ -100,6 +107,17 @@ fi
 
 r1=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_size'"|grep wsrep_cluster_size|cut -f 2)
 r2=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_status'"|grep wsrep_cluster_status|cut -f 2)
+r3=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_flow_control_paused'"|grep wsrep_flow_control_paused|cut -f 2)
+
+if [ -z "$r3" ]; then
+  echo "UNKNOWN: wsrep_flow_control_paused is empty"
+  ST_FINAL=$ST_UK
+fi
+
+if [ $(echo "$r3 > $fcp" | bc) = 1 ]; then
+  echo "CRITICAL: wsrep_flow_control_paused is > $fcp"
+  ST_FINAL=$ST_CR
+fi
 
 if [ "$primary" = 'TRUE' ]; then
   if [ "$r2" != 'Primary' ]; then
