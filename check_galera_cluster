@@ -7,7 +7,6 @@ ST_OK=0
 ST_WR=1
 ST_CR=2
 ST_UK=3
-ST_FINAL=$ST_UK
 
 print_version() {
   echo "$VERSION $AUTHOR"
@@ -135,6 +134,8 @@ elif [ $r1 -le $crit ]; then
 elif [ $r1 -le $warn ]; then
   echo "WARNING: number of NODES = $r1"
   ST_FINAL=${ST_FINAL-$ST_WR}
+else
+  exit $ST_UK
 fi
 
 exit $ST_FINAL
