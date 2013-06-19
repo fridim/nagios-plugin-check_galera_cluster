@@ -104,9 +104,12 @@ if [ -z "$password" ]; then
   exit $ST_UK
 fi
 
-r1=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_size'"|grep wsrep_cluster_size|cut -f 2)
-r2=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_cluster_status'"|grep wsrep_cluster_status|cut -f 2)
-r3=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -e "show status like 'wsrep_flow_control_paused'"|grep wsrep_flow_control_paused|cut -f 2)
+r1=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_cluster_size'"|cut -f 2) # 3  (GALERA_CLUSTER_SIZE)
+r2=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_cluster_status'"|cut -f 2) # Primary
+r3=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_flow_control_paused'"|cut -f 2) # < 0.1
+r4=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_ready'"|cut -f 2)  # ON
+r5=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_connected'"|cut -f 2)  # ON
+r6=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_local_state_comment'"|cut -f 2)  # Synced
 
 if [ -z "$r3" ]; then
   echo "UNKNOWN: wsrep_flow_control_paused is empty"
@@ -123,6 +126,21 @@ if [ "$primary" = 'TRUE' ]; then
     echo "CRITICAL: node is not primary"
     ST_FINAL=$ST_CR
   fi
+fi
+
+if [ "$r4" != 'ON' ]; then
+  echo "CRITICAL: node is not ready"
+  ST_FINAL=$ST_CR
+fi
+
+if [ "$r5" != 'ON' ]; then
+  echo "CRITICAL: node is not connected"
+  ST_FINAL=$ST_CR
+fi
+
+if [ "$r6" != 'Synced' ]; then
+  echo "CRITICAL: node is not synced"
+  ST_FINAL=$ST_CR
 fi
 
 if [ $r1 -gt $warn ]; then
