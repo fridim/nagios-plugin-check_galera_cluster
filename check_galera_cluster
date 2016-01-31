@@ -1,7 +1,7 @@
 #!/bin/bash
 PROGNAME=`basename $0`
-VERSION="Version 1.0,"
-AUTHOR="Guillaume Coré <g@fridim.org>"
+VERSION="Version 1.1"
+AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>"
 
 ST_OK=0
 ST_WR=1
@@ -17,7 +17,7 @@ print_help() {
   echo ""
   echo "$PROGNAME is a Nagios plugin to monitor Galera cluster status."
   echo ""
-  echo "$PROGNAME -u USER -p PASSWORD [-H HOST] [-P PORT] [-w SIZE] [-c SIZE] [-f FLOAT] [-0]"
+  echo "$PROGNAME [-u USER] [-p PASSWORD] [-H HOST] [-P PORT] [-w SIZE] [-c SIZE] [-f FLOAT] [-0]"
   echo ""
   echo "Options:"
   echo "  u)"
@@ -25,9 +25,9 @@ print_help() {
   echo "  p)"
   echo "    MySQL password."
   echo "  H)"
-  echo "    MySQL host. Default is localhost."
+  echo "    MySQL host."
   echo "  P)"
-  echo "    MySQL port. Default is 3306."
+  echo "    MySQL port."
   echo "  w)"
   echo "    Sets minimum number of nodes in the cluster when WARNING is raised. (default is same as critical)."
   echo "  c)"
@@ -41,8 +41,6 @@ print_help() {
 
 # default values
 crit=2
-port='3306'
-mysqlhost='localhost'
 fcp=0.1
 
 while getopts “hvu:p:H:P:w:c:f:0” OPTION; do
@@ -91,25 +89,23 @@ if [ -z "$warn" ]; then
   warn=$crit
 fi
 
-# MANDATORY args
-if [ -z "$mysqluser" ]; then
-  echo "argument -u missing"
-  print_help
-  exit $ST_UK
-fi
+create_param() {
+  if [ -n "$2" ]; then
+    echo $1$2
+  fi
+}
 
-if [ -z "$password" ]; then
-  echo "argument -p missing"
-  print_help
-  exit $ST_UK
-fi
+param_mysqlhost=$(create_param -h "$mysqlhost")
+param_port=$(create_param -P "$port")
+param_mysqluser=$(create_param -u "$mysqluser")
+param_password=$(create_param -p "$password")
 
-r1=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_cluster_size'"|cut -f 2) # 3  (GALERA_CLUSTER_SIZE)
-r2=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_cluster_status'"|cut -f 2) # Primary
-r3=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_flow_control_paused'"|cut -f 2) # < 0.1
-r4=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_ready'"|cut -f 2)  # ON
-r5=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_connected'"|cut -f 2)  # ON
-r6=$(mysql -h$mysqlhost -P$port -u$mysqluser -p$password -B -N -e "show status like 'wsrep_local_state_comment'"|cut -f 2)  # Synced
+r1=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_cluster_size'"|cut -f 2) # 3  (GALERA_CLUSTER_SIZE)
+r2=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_cluster_status'"|cut -f 2) # Primary
+r3=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_flow_control_paused'"|cut -f 2) # < 0.1
+r4=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_ready'"|cut -f 2)  # ON
+r5=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_connected'"|cut -f 2)  # ON
+r6=$(mysql $param_mysqlhost $param_port $param_mysqluser $param_password -B -N -e "show status like 'wsrep_local_state_comment'"|cut -f 2)  # Synced
 
 if [ -z "$r3" ]; then
   echo "UNKNOWN: wsrep_flow_control_paused is empty"
