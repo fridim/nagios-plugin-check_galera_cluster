@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGNAME=`basename $0`
-VERSION="Version 1.1"
+VERSION="Version 1.1.1"
 AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>"
 
 ST_OK=0
@@ -42,6 +42,11 @@ print_help() {
 # default values
 crit=2
 fcp=0.1
+
+if (( $# == 0 )); then
+      echo "UNKNOWN: No parameter given! Please use -h for help!"
+      exit $ST_UK
+fi
 
 while getopts “hvu:p:H:P:w:c:f:0” OPTION; do
   case $OPTION in
