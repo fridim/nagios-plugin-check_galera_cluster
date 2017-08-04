@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGNAME=`basename $0`
-VERSION="Version 1.1.1"
+VERSION="Version 1.1.2"
 AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>"
 
 ST_OK=0
