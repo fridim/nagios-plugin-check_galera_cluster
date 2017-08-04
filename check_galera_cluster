@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGNAME=`basename $0`
-VERSION="Version 1.1.2"
+VERSION="Version 1.1.3"
 AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>"
 
 ST_OK=0
@@ -142,34 +142,34 @@ fi
 
 if [ "$primary" = 'TRUE' ]; then
   if [ "$r2" != 'Primary' ]; then
-    echo "CRITICAL: node is not primary"
+    echo "CRITICAL: node is not primary (wsrep_cluster_status)"
     ST_FINAL=$ST_CR
   fi
 fi
 
 if [ "$r4" != 'ON' ]; then
-  echo "CRITICAL: node is not ready"
+  echo "CRITICAL: node is not ready (wsrep_ready)"
   ST_FINAL=$ST_CR
 fi
 
 if [ "$r5" != 'ON' ]; then
-  echo "CRITICAL: node is not connected"
+  echo "CRITICAL: node is not connected (wsrep_connected)"
   ST_FINAL=$ST_CR
 fi
 
 if [ "$r6" != 'Synced' ]; then
-  echo "CRITICAL: node is not synced"
+  echo "CRITICAL: node is not synced - actual state is: $r6 (wsrep_local_state_comment)"
   ST_FINAL=$ST_CR
 fi
 
 if [ $r1 -gt $warn ]; then
-  echo "OK: number of NODES = $r1"
+  echo "OK: number of NODES = $r1 (wsrep_cluster_size)"
   ST_FINAL=${ST_FINAL-$ST_OK}
 elif [ $r1 -le $crit ]; then
-  echo "CRITICAL: number of NODES = $r1"
+  echo "CRITICAL: number of NODES = $r1 (wsrep_cluster_size)"
   ST_FINAL=$ST_CR
 elif [ $r1 -le $warn ]; then
-  echo "WARNING: number of NODES = $r1"
+  echo "WARNING: number of NODES = $r1 (wsrep_cluster_size)"
   ST_FINAL=${ST_FINAL-$ST_WR}
 else
   exit $ST_UK
