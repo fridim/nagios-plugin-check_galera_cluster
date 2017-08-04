@@ -43,6 +43,24 @@ print_help() {
 crit=2
 fcp=0.1
 
+#check required tools
+check_executable() {
+
+    if [ -z "$1" ]; then
+        echo "check_executable: no parameter given!"
+        exit $ST_UK
+    fi
+
+    if [ -z "$(which $1)" ]; then
+            echo "UNKNOWN: Cannot find $1"
+            exit $ST_UK
+    fi
+
+}
+check_executable mysql
+check_executable bc
+
+
 if (( $# == 0 )); then
       echo "UNKNOWN: No parameter given! Please use -h for help!"
       exit $ST_UK
