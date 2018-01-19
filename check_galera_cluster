@@ -10,7 +10,7 @@ ST_UK=3
 
 print_version() {
   echo "$VERSION $AUTHOR"
-} 
+}
 
 print_help() {
   print_version $PROGNAME $VERSION
@@ -43,19 +43,16 @@ print_help() {
 crit=2
 fcp=0.1
 
-#check required tools
 check_executable() {
-
     if [ -z "$1" ]; then
         echo "check_executable: no parameter given!"
         exit $ST_UK
     fi
 
-    if [ -z "$(which $1)" ]; then
-            echo "UNKNOWN: Cannot find $1"
-            exit $ST_UK
+    if ! command -v "$1" &>/dev/null; then
+        echo "UNKNOWN: Cannot find $1"
+        exit $ST_UK
     fi
-
 }
 
 check_executable mysql
