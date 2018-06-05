@@ -3,7 +3,7 @@ nagios-plugin-check_galera_cluster
 
 A nagios plugin to check status of a galera cluster
 
-    Version 1.1, Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>
+    Version 1.1.4, Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>, Staf Wagemakers <staf@wagemakers.be>
 
     check_galera_cluster is a Nagios plugin to monitor Galera cluster status.
     
@@ -18,6 +18,8 @@ A nagios plugin to check status of a galera cluster
         MySQL host.
       P)
         MySQL port.
+      m)
+        MySQL extra my.cnf configuration file
       w)
         Sets minimum number of nodes in the cluster when WARNING is raised. (default is same as critical).
       c)
@@ -26,3 +28,5 @@ A nagios plugin to check status of a galera cluster
         Sets critical value of wsrep_flow_control_paused (default is 0.1).
       0)
         Rise CRITICAL if the node is not primary
+      s)
+        Create state file, detect disconnected nodes
