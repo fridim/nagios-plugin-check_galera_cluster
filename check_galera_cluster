@@ -46,7 +46,7 @@ print_help() {
   echo "  0)"
   echo "    Rise CRITICAL if the node is not primary"
   echo "  s)"
-  echo "    Create state file, detect if a node gets disconnected automatically"
+  echo "    Create state file, detect disconnected nodes"
   exit $ST_UK
 }
 

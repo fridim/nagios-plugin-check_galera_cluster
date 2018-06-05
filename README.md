@@ -29,4 +29,4 @@ A nagios plugin to check status of a galera cluster
       0)
         Rise CRITICAL if the node is not primary
       s)
-        Create state file, detect if a node gets disconnected automatically
+        Create state file, detect disconnected nodes
