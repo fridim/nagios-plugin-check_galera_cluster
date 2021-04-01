@@ -2,8 +2,8 @@
 
 
 PROGNAME=`basename $0`
-VERSION="Version 1.1.4"
-AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>, Staf Wagemakers <staf@wagemakers.be>"
+VERSION="Version 1.1.5"
+AUTHOR="Guillaume Coré <fridim@onfi.re>, Ales Nosek <ales.nosek@gmail.com>, Staf Wagemakers <staf@wagemakers.be>, Claudio Kuenzler <claudiokuenzler.com>"
 
 ST_OK=0
 ST_WR=1
@@ -22,7 +22,7 @@ print_version() {
 print_help() {
   print_version $PROGNAME $VERSION
   echo ""
-  echo "$PROGNAME is a Nagios plugin to monitor Galera cluster status."
+  echo "$PROGNAME is a monitoring plugin to monitor Galera cluster status."
   echo ""
   echo "$PROGNAME [-u USER] [-p PASSWORD] [-H HOST] [-P PORT] [-m file] [-w SIZE] [-c SIZE] [-s statefile] [-f FLOAT] [-0]"
   echo ""
@@ -132,8 +132,9 @@ param_port=$(create_param -P "$port")
 param_mysqluser=$(create_param -u "$mysqluser")
 param_password=$(create_param -p "$password")
 param_configfile=$(create_param --defaults-extra-file= "$myconfig")
+export MYSQL_PWD=$password
 
-param_mysql="$param_mysqlhost $param_port $param_mysqluser $param_password $param_configfile"
+param_mysql="$param_mysqlhost $param_port $param_mysqluser $param_configfile"
 
 #
 # verify the database connection
@@ -145,23 +146,29 @@ mysql $param_mysql -B -N  -e '\s;' >/dev/null 2>&1 || {
 }
 
 #
+# retrieve the mysql status
+#
+
+rMysqlStatus=$(mysql $param_mysql -B -N -e "show status like 'wsrep_%';")
+
+#
 # verify that the node is part of a cluster
 #
 
-rClusterStateUuid=$(mysql $param_mysql -B -N -e "show status like 'wsrep_cluster_state_uuid'; "|cut -f 2)
+rClusterStateUuid=$(echo "$rMysqlStatus" | awk '/wsrep_cluster_state_uuid/ {print $2}')
 
 if [ -z "$rClusterStateUuid" ]; then
   echo "CRITICAL: node is not part of a cluster"
   exit $ST_CR
 fi
 
-rClusterSize=$(mysql $param_mysql -B -N -e "show status like 'wsrep_cluster_size'"|cut -f 2)
-rClusterStatus=$(mysql $param_mysql -B -N -e "show status like 'wsrep_cluster_status'"|cut -f 2) # Primary
-rFlowControl=$(mysql $param_mysql -B -N -e "show status like 'wsrep_flow_control_paused'"|cut -f 2) # < 0.1
-rReady=$(mysql $param_mysql -B -N -e "show status like 'wsrep_ready'"|cut -f 2)  # ON
-rConnected=$(mysql $param_mysql -B -N -e "show status like 'wsrep_connected'"|cut -f 2)  # ON
-rLocalStateComment=$(mysql $param_mysql -B -N -e "show status like 'wsrep_local_state_comment'"|cut -f 2)  # Synced
-rIncommingAddresses=$(mysql $param_mysql -B -N -e "show global status like 'wsrep_incoming_addresses';"|cut -f 2)
+rClusterSize=$(echo "$rMysqlStatus" | awk '/wsrep_cluster_size/ {print $2}')
+rClusterStatus=$(echo "$rMysqlStatus" | awk '/wsrep_cluster_status/ {print $2}') # Primary
+rFlowControl=$(echo "$rMysqlStatus" | awk '/wsrep_flow_control_paused\t/ {print $2}') # < 0.1
+rReady=$(echo "$rMysqlStatus" | awk '/wsrep_ready/ {print $2}') # ON
+rConnected=$(echo "$rMysqlStatus" | awk '/wsrep_connected/ {print $2}') # ON
+rLocalStateComment=$(echo "$rMysqlStatus" | awk '/wsrep_local_state_comment/ {print $2}') # Synced
+rIncommingAddresses=$(echo "$rMysqlStatus" | awk '/wsrep_incoming_addresses/ {print $2}') 
   
 if [ -z "$rFlowControl" ]; then
   echo "UNKNOWN: wsrep_flow_control_paused is empty"
