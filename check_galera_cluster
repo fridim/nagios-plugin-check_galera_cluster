@@ -165,6 +165,7 @@ fi
 rClusterSize=$(echo "$rMysqlStatus" | awk '/wsrep_cluster_size/ {print $2}')
 rClusterStatus=$(echo "$rMysqlStatus" | awk '/wsrep_cluster_status/ {print $2}') # Primary
 rFlowControl=$(echo "$rMysqlStatus" | awk '/wsrep_flow_control_paused\t/ {print $2}') # < 0.1
+rFlowControl=$(printf "%.14f" $rFlowControl) # issue #4
 rReady=$(echo "$rMysqlStatus" | awk '/wsrep_ready/ {print $2}') # ON
 rConnected=$(echo "$rMysqlStatus" | awk '/wsrep_connected/ {print $2}') # ON
 rLocalStateComment=$(echo "$rMysqlStatus" | awk '/wsrep_local_state_comment/ {print $2}') # Synced
