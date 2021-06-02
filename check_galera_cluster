@@ -1,5 +1,6 @@
 #!/bin/bash
 
+LANG=C
 
 PROGNAME=`basename $0`
 VERSION="Version 1.1.5"
