@@ -177,7 +177,7 @@ if [ -z "$rFlowControl" ]; then
   unknAlerts=$(($unknAlerts+1))
 fi
 
-if [ $(echo "$rFlowControl > $fcp" | bc) = 1 ]; then
+if [ $(echo "$rFlowControl > $fcp" | bc) == 1 ]; then
   echo "CRITICAL: wsrep_flow_control_paused is > $fcp"
   critAlerts=$(($criticalAlerts+1))
 fi
